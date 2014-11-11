@@ -1,8 +1,7 @@
 source("http://bioconductor.org/biocLite.R")
 biocLite("affy")
-biocLite("GEOquery")
 library(affy)
-library(GEOquery)
+
 
 setwd("~/Northwestern/Courses/Stats_for_Bioinformatics/Homework/HW2/GSE21784_RAW/")
 

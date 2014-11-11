@@ -1,0 +1,176 @@
+Stats for Bioinformatics
+
+Lecture 5:
+
+Utilizing spike-in control in order to have a standardized amount of DNA
+
+MVA plots
+
+M = log2(E1/E2)
+
+A = E1+E2/2 (average)
+
+Log2 ratio should be centered around 0 if there is no difference between the data sets
+
+######
+
+How to normalize RNA-seq data? Still to be determined!
+
+######
+
+Paired Design vs Two Sample
+
+Paired Design is meant to eliminate genetic variation
+  - measure same person before and after treatment
+  - look at twins
+
+#####
+
+Statistics tests -
+parametric tests -
+  two sampled t-test - compare each genes expression vs experimental conditions.. are they part of the same distribution?
+  paired t test
+
+  two tailed vs one tail? (2x pt if doing 1 sided t-test)
+
+non-parametric test -
+  wilcoxon ranked sum test
+  wilcoxon test
+
+permutation based testing
+
+Lower expression values are less reliable than higher expression
+
+## NORMALIZE ALL ARRAYS AT THE SAME TIME - IN SAME LINE OF CODE (rma function)
+
+
+MULTIPLE TESTING-
+
+ FWER=(reject at least one Hypothesis |given all H0 are true)
+If we control hypothesis-wise type I error at 0.05 individually, what’s the FWER?
+	-- e.g. If test two hypotheses, a1=0.05 a2=0.05
+(0.05*0.95)+(0.05*0.95)+(0.05^2)=0.0975
+1             2           3
+
+three possibilities :
+1 - a1 reject null, a2 cant reject null
+2 - a2 reject null, a1 cant reject null
+3 - accept both
+
+Benjamini and Hochber 1995
+
+1. sort p values (largest p value at bottom/first to test)
+2. define i* pi < (i/n)α (set alpha to .05)
+3. reject null hypothesis after i*
+
+
+FDR
+
+**NOTE** distribution of p-value if null hypothesis is true.
+however in differential expression experiments, there is a skew toward lower p-values
+this suggests that there is in fact differential gene expression
+
+FDR=m0Pr(p-value<= t|H0)/s(t) = m0t/s(t)
+
+where m0 is number of invariant genes (true null hypotheses).
+t is significance threshold you choose
+
+Let p0=m0/m, i.e the proportion
+of the true null hypotheses in the
+total number of m hypotheses.
+
+under null hypothesis, if λ is a p value from 0-1
+
+what fraction of p values have are larger than λ?
+
+(1-λ)*m0
+
+estimate
+
+m0 = (# pvalues > λ)/1-λ
+
+how to choose lambda???
+
+it is a compromise!!!
+
+########
+
+q-value : probability (H0 is true | observed as or more extreme p-value)
+-> more bayesian approach than p-value. more appropriate than for picking genes
+-> minimum FDR at which the test may be considered significant
+
+
+#### Exploratory analysis of microarray data - UNSUPERVISED LEARNING
+
+Classification tasks in microarray data
+Similarity measures
+Cluster analysis
+  - cluster samples
+  - cluster genes
+
+big p small n problem
+n = sample size
+p = variables (each gene is a variable when you cluster genes)
+
+How to cluster? Need distance measure
+
+When are objects similar to one another?
+
+Cluster Algorithms minimize distance within groups or maximize distance between groups
+
+Distance measures:
+- Euclidean distance - difference between points in space - MOST OFTEN USED
+- Manhattan distance - less sensitive to outliers (absolute distance) LEAST USED
+- Correlation distance - how correlated are the samples/genes (can only measure linear relationships)
+    - need to use (1 - correlation)
+
+Perform standardization prior to calculating distance (scaling)
+  - THIS IS A LINEAR TRANSFORMATION AND DOES NOT CHANGE THE CORRELATION
+  - After standardization, euclidean distance and correlation distance are the SAME
+
+
+Hierarchical Clustering (HCL)
+  Bottom up. Find most similar pairs and then go up.
+  Vertical branches are the similarity between groups.
+  Bottom of tree are most similar.
+  Next branch up are closest to the bottom and so on
+
+Need to define some sort of distance
+  Average distance - mean distance
+  Single Linkage - min distance
+  Complete Linkage - max distance
+
+Number of clusters depends on the allowed distance between clusters
+
+Clustering does not show the full picture because you are grouping variables
+  Parameters for distance matrix - n(n-1)/2
+  Parameters for dendrogram - n-1
+
+Can cluster experiments
+  Possible application is diagnosing a disease.
+
+HCL is not robust, small changes can change tree
+
+K-means CLUSTERING -
+  Need to pre-specify the number of groups to use for clustering - HOW is below
+  MINIMIZE within-cluster variance!!!
+    Distance between each point to center of the cluster
+
+  Steps -
+    Assign points to cluster whose centroid is closest to the points
+    Update centroids by taking average of points within the cluster
+
+  Number of clusters
+    - eigenvalues
+    - sum of squares
+
+### EIGEN ARRAYS - LOOKUP
+
+########################### Supervised learning
+
+-Linear and quadratic disriminant analys
+-Nearest neighbor method
+-Logistic regression method
+
+Bayes rules for classification.
+slide6 explains posterior probability.

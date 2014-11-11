@@ -1,0 +1,21 @@
+---
+title: "HW3 - Stefan zdraljevic"
+output: html_document
+---
+
+```{r, warning=FALSE,message=FALSE}
+# source("http://bioconductor.org/biocLite.R")
+# biocLite("affy")
+library(affy)
+library(SAM)
+library(multtest)
+
+setwd("~/Northwestern/Courses/Stats_for_Bioinformatics/Homework/HW2/GSE21784_RAW/")
+```
+
+### Read in .CEL files and rename
+
+```{r}
+expd <- ReadAffy()
+sampleNames(expd) <- c("L4_1","L4_2","L4_3", "Day6_1", "Day6_2","Day6_3","Day15_1","Day15_2","Day15_3")
+```

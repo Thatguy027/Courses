@@ -1,0 +1,117 @@
+---
+title: 'Homework #2 - Stefan Zdraljevic'
+output: html_document
+---
+
+# Normalization of Affymetrix data set 
+
+This dataset was obtained from the GEO database - Reference series **GSE21784**.
+
+The data consists of *C.elegans* expression data at three timepoints during the lifecycle (L4, adult day 6, adult day 15). Each timepoint is replicated in triplicate.
+
+Data was downloaded, saved, and unzipped in my homeworke dirtectory
+
+### Load required packages
+
+```{r, warning=FALSE,message=FALSE}
+# source("http://bioconductor.org/biocLite.R")
+# biocLite("affy")
+library(affy)
+
+setwd("~/Northwestern/Courses/Stats_for_Bioinformatics/Homework/HW2/GSE21784_RAW/")
+```
+
+### Read in .CEL files and rename
+
+```{r}
+expd <- ReadAffy()
+sampleNames(expd) <- c("L4_1","L4_2","L4_3", "Day6_1", "Day6_2","Day6_3","Day15_1","Day15_2","Day15_3")
+```
+
+### Plot two replicate experiments against each other
+
+```{r,warning=FALSE}
+y <- log2(pm(expd)[,1])[1:5000]
+x <- log2(pm(expd)[,2])[1:5000]
+LO <- loess(y~x,span=0.3)
+
+plot(x,y,main="L4 vs L4 replicates",xlab="L4 replicate",ylab="L4 replicate")
+points(x,predict(LO),col=2,lwd=.5,cex=.3)
+```
+
+### Plot L4 vs Day 6
+
+```{r}
+x <- log2(pm(expd)[,1])[1:5000]
+y <- log2(pm(expd)[,4])[1:5000]
+LO <- loess(y~x,span=0.3)
+
+plot(x,y,main="L4 vs Day 6",xlab="Day 6 replicate",ylab="L4 replicate")
+points(x,predict(LO),col=2,lwd=.5,cex=.3)
+```
+
+### Plot L4 vs Day 15
+
+```{r}
+x <- log2(pm(expd)[,1])[1:5000]
+y <- log2(pm(expd)[,7])[1:5000]
+LO <- loess(y~x,span=0.3)
+
+plot(x,y,main="L4 vs Day 15",xlab="Day 15 replicate",ylab="L4 replicate")
+points(x,predict(LO),col=2,lwd=.5,cex=.3)
+```
+
+### Histogram of log intensity
+
+```{r}
+hist(expd[,1:9],col=c(rep(2,3),rep(3,3),rep(4,3)), ylab = "Density", xlab = "Log Intensity")
+```
+
+### Boxplots of replicates
+
+```{r}
+boxplot(expd,col=c(rep(2,3),rep(3,3),rep(4,3)), xlab = "Stage", ylab = "Log Intensity")
+```
+
+### Identification of possible RNA degradation at different ends of the mRNA transcript
+
+```{r}
+deg <- AffyRNAdeg(expd[,1])
+plotAffyRNAdeg(deg)  
+```
+
+### MVA plot of different day measurements
+
+```{r}
+gn <- sample(geneNames(expd),1000)       
+pms <- pm(expd[,c(1,4,7)],gn)
+mva.pairs(pms)
+```
+
+### Normalization of data
+
+```{r, message=FALSE,warning=FALSE}
+normalized.expd <- merge(normalize(expd[,1:3],method="loess"), 
+                         normalize(expd[,4:6],method="loess"))
+
+normalized.expd <- merge(normalized.expd, 
+                         normalize(expd[,7:9],method="loess"))
+
+boxplot(normalized.expd,col=c(rep(2,3),rep(3,3),rep(4,3)), main = "Normalized Expression Data", xlab = "Stage", ylab = "Log Expression")
+```
+
+### Normalized MVA compared to un-normalized
+
+```{r}
+gn <- sample(geneNames(normalized.expd),1000)   
+
+pms <- pm(normalized.expd[,c(1,2,3)],gn)
+mva.pairs(pms, main = "Normalzed MVA Plot")
+     
+pms <- pm(expd[,c(1,2,3)],gn)
+mva.pairs(pms, main = "unNormalized MVA Plot")
+```
+
+
+
+

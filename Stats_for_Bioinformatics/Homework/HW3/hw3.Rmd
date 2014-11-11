@@ -1,0 +1,113 @@
+---
+title: "HW3 - Stefan zdraljevic"
+output: html_document
+---
+
+This dataset was obtained from the GEO database - Reference series **GSE21784**.
+
+The data consists of *C.elegans* expression data at three timepoints during the lifecycle (L4, adult day 6, adult day 15). Each timepoint is replicated in triplicate.
+
+Comparisons between Benjamani and Hochberg will be made using L4 vs day 15 data
+
+```{r, warning=FALSE,message=FALSE}
+#  source("http://bioconductor.org/biocLite.R")
+# biocLite("affy")
+#biocLite("impute")
+library(affy)
+library(SAM)
+library(multtest)
+# biocLite("siggenes")
+# biocLite("multtest")
+library(siggenes)
+library(samr)
+library(impute)
+library(dplyr)
+
+setwd("~/Northwestern/Courses/Stats_for_Bioinformatics/Homework/HW2/GSE21784_RAW/")
+```
+
+### Read in .CEL files and rename
+
+```{r}
+setwd("~/Northwestern/Courses/Stats_for_Bioinformatics/Homework/HW2/GSE21784_RAW/")
+expd <- ReadAffy()
+enorm <- rma(expd)
+write.exprs(enorm,"wormGrowth.txt")
+
+exnorm <- read.table("wormGrowth.txt",sep="\t",skip=1)
+exnorm1 <- exnorm
+colnames(exnorm1) <- c("gene","L4_1","L4_2","L4_3", "Day6_1", "Day6_2","Day6_3","Day15_1","Day15_2","Day15_3")
+```
+
+
+```{r}
+h3.cl <-c(rep(0,3),rep(1,3))
+
+h3df <- exnorm1[,c(1,2:4,7:10)]
+
+###calcuate the teststat
+teststat <- mt.teststat(h3df[,2:7],test="t.equalvar",h3.cl)   ###default is t test.
+
+
+rawp0<-2*(1-pt(abs(teststat),df=4))       
+procs <- c("Bonferroni", "Holm", "Hochberg", "SidakSS", "SidakSD","BH", "BY")
+res <- mt.rawp2adjp(rawp0, procs)
+```
+
+
+```{r}
+####sort the adjusted p-value to original order
+adjp <- data.frame(res$adjp[order(res$index), ])
+
+###round the adjusted p-value to the second decimal places
+adjp <- round(adjp, 12)
+```
+
+### Filter p values based on adjusted p values for Benjamini and Hochberg procedure
+
+```{r}
+
+temp <- filter(adjp, BH < .05)
+
+# bnh <- data.frame(hoch = (adjp$BH))
+# bnh <- arrange(bnh, hoch)
+# bnh$index <- c(1:nrow(bnh))
+# bnh$cutoff <- (bnh$index/nrow(bnh))*.05
+# bnh$fin <- ifelse(bnh$hoch < bnh$cutoff,1,0)
+# diffexp <- filter(bnh, fin == 1)
+
+nrow(temp)
+```
+
+# 4657 differentially expressed genes using Benjamini and Hochberg @ FDF = .05
+
+----------
+
+```{r}
+
+exmat <- exnorm[,c(2:4,7:10)]
+h3.cl <-c(rep(1,3),rep(2,3))
+
+exmat1 <- list(x=as.matrix(exmat), y = h3.cl, logged2=T)
+
+samr.obj <- samr::samr(exmat1,  resp.type="Two class unpaired")
+
+delta.table <- samr::samr.compute.delta.table(samr.obj, min.foldchange=0.1,nvals=100)
+
+siggenes.table <- samr::samr.compute.siggenes.table(samr.obj, del=0.9212618985, exmat1, delta.table)
+
+samr::samr.plot(samr.obj,del=0.9212618985)
+
+nrow(siggenes.table[[1]])+nrow(siggenes.table[[2]]) # genes up + genes down
+```
+
+# differentiall expressed genes using SAM method (above)
+
+The difference between the two methods is a result of the way significance is calculated. Permutation in the case of SAM and ranked p values in the case of Benjamani and Hochberg. SAM uses non-parametric statistics to identify differentially expressed genes (DEGs), while the BH method assumes independence of genes (which is not always true in biology) and a parametric distribution. 
+
+
+
+
+
+
+
