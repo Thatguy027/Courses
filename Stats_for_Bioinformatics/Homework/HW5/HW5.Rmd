@@ -1,0 +1,131 @@
+---
+title: "HW5 - Stefan Zdraljevic"
+output: html_document
+---
+
+### Required Packages
+
+```{r, warning=FALSE,message=FALSE}
+library(data.table)
+library(MASS)
+library(pamr)
+library(ggplot2)
+library(dplyr)
+```
+
+### Prep data
+
+```{r,, warning=FALSE,message=FALSE}
+LM <- data.frame(fread("~/Dropbox/AndersenLab/LabFolders/Stefan/Courses/Stats_for_Bioinformatics/Homework/HW5/lm.txt"))
+LM <- LM[,-c(1,2)]
+LM <- LM[,c(1:27)]
+
+
+t <- numeric()
+LM <- as.matrix(LM)
+for (i in 1:nrow(LM)){
+  t[i]<- (mean(LM[i,1:19])-mean(LM[i,20:27]))/sqrt(18*var(LM[i,1:19])/25+7*var(LM[i,20:27])/25)
+}
+
+LM <- cbind(LM,t)
+LM <- LM[is.na(t)==F,]
+
+library(MASS)
+
+candidate<-LM[abs(LM[,28])>1,]
+
+candidate1 <- matrix(0,0,27)
+t <- sort(candidate[,28])
+
+for (i in 1:nrow(candidate)){
+  candidate1 <- rbind(candidate1,candidate[candidate[,28]==t[i],1:27])
+}
+
+co <- cor(candidate1)  ###correlation between samples
+image(seq(1:27),1:27,co)
+```
+
+### LDA
+
+```{r, warning=FALSE,message=FALSE}
+######discriminant analysis
+
+class <- c(rep("B",19),rep("T",8))
+
+candidate2 <-cbind(t(candidate1),class)
+candidate2 <- data.frame(candidate2)
+
+
+write.table(candidate2,"~/Dropbox/AndersenLab/LabFolders/Stefan/Courses/Stats_for_Bioinformatics/Homework/HW5/candidate2.txt",quote=F,sep="\t",col.names=T,row.names=F)
+
+candidate2<-read.table("~/Dropbox/AndersenLab/LabFolders/Stefan/Courses/Stats_for_Bioinformatics/Homework/HW5/candidate2.txt",header=T)
+
+
+###linear/quadratic discriminant analysis using lda
+tr<- sample(27,22)
+tr <- sort(tr)
+z <- lda(class~ .,candidate2,subset=tr)
+
+zz <- lda(class~ .,candidate2,subset=tr,CV=T)
+##z <- qda(class~ .,candidate2,subset=tr)
+
+predictClass <- predict(z,candidate2[-tr,])$class
+predictClass
+class[-tr]
+```
+
+### Cross validation
+
+```{r, warning=FALSE,message=FALSE}
+#### cross-validation, choose the number of genes which gives lowest error rate
+error <- numeric()
+for ( i in 1:50){
+  #   cat("i=",i,"\n")
+  tr<- sample(27,22)
+  tr <- sort(tr)
+  z <- lda(class~ .,candidate2,subset=tr)
+  predictClass <- predict(z,candidate2[-tr,])$class
+  error <- c(error,sum(predictClass!=class[-tr])) 
+  }
+###test error
+errorRate <- sum(error)/(27-length(tr))/length(error)
+
+```
+
+## approximately 50 genes best split up the data using LDA method
+
+### pamr
+
+```{r, warning=FALSE,message=FALSE}
+############## PAM
+##Install
+
+#install.packages("pamr")
+
+##use PAM
+
+LM<-pamr.from.excel("~/Dropbox/AndersenLab/LabFolders/Stefan/Courses/Stats_for_Bioinformatics/Homework/HW5/lmSAMformat.txt",40)
+#LM$x<-log2(LM$x)
+#pamr.menu(LM)
+LM.train <- pamr.train(LM)
+LM.results <- pamr.cv(LM.train,LM,nfold=10)
+
+##plot cross-validation result
+pamr.plotcv(LM.results)
+
+```
+
+## the number of genes that pamr uses to identify groups is on average fewer than the LDA method
+**NOTE** the minimum number of genes with the minimum error rate are used to define the model (from above plot)
+
+```{r}
+
+##plot cross-validated probabilites
+pamr.plotcvprob(LM.results,LM, threshold=2.2)
+```
+
+```{r}
+##plot class centroids
+pamr.plotcen(LM.train,LM,threshold=2)
+```
+
