@@ -1,10 +1,13 @@
+# load required packages
 library(data.table)
 library(stringr)
 library(CCA)
 library(dplyr)
 
-#### RIAILS
+#### Load processed RIAILs expression data
+# at work
 expr <- fread("~/Dropbox/AndersenLab/LabFolders/Stefan/Courses/Stats_for_Bioinformatics/final/2010rockman_riail_expression.txt")
+# at home
 expr <- fread("~/Northwestern/Courses/Stats_for_Bioinformatics/final/2010rockman_riail_expression.txt")
 
 
